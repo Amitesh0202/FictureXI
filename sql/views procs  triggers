@@ -1,0 +1,131 @@
+-- FixtureXI : views, stored procedures, triggers.  Run after 01_schema.sql
+
+-- ---------- VIEWS (totals are derived, never stored) ----------
+CREATE OR REPLACE VIEW v_team_score AS
+SELECT b.match_id,
+       p.team_id,
+       SUM(b.runs) + MAX(CASE WHEN p.team_id = m.team1_id
+                              THEN m.team1_extras ELSE m.team2_extras END) AS total_runs,
+       SUM(CASE WHEN b.how_out <> 'not out' THEN 1 ELSE 0 END)           AS wickets
+  FROM batting b
+  JOIN player p        ON p.player_id = b.player_id
+  JOIN cricket_match m ON m.match_id  = b.match_id
+ GROUP BY b.match_id, p.team_id;
+
+CREATE OR REPLACE VIEW v_fixture_list AS
+SELECT m.match_id, m.tournament_id, m.round_no, m.match_date, m.status,
+       NVL(v.venue_name, 'TBD') AS venue,
+       t1.short_code AS team1, t2.short_code AS team2,
+       s1.total_runs || '/' || s1.wickets AS team1_score,
+       s2.total_runs || '/' || s2.wickets AS team2_score,
+       w.short_code  AS winner
+  FROM cricket_match m
+  JOIN team t1 ON t1.team_id = m.team1_id
+  JOIN team t2 ON t2.team_id = m.team2_id
+  LEFT JOIN venue v         ON v.venue_id = m.venue_id
+  LEFT JOIN team w          ON w.team_id  = m.winner_id
+  LEFT JOIN v_team_score s1 ON s1.match_id = m.match_id AND s1.team_id = m.team1_id
+  LEFT JOIN v_team_score s2 ON s2.match_id = m.match_id AND s2.team_id = m.team2_id;
+
+-- ---------- PROCEDURE 1: round-robin fixture generator (circle method) ----------
+CREATE OR REPLACE PROCEDURE generate_fixtures (p_tournament_id IN NUMBER) AS
+  TYPE t_ids IS TABLE OF NUMBER INDEX BY PLS_INTEGER;
+  t       t_ids;
+  n       PLS_INTEGER := 0;
+  v_start DATE;
+  v_end   DATE;
+  v_gap   NUMBER;
+  v_cnt   NUMBER;
+  v_last  NUMBER;
+  a       NUMBER;
+  b       NUMBER;
+BEGIN
+  -- lock the tournament row so two organisers cannot generate at the same time
+  SELECT start_date, end_date, days_between_rounds
+    INTO v_start, v_end, v_gap
+    FROM tournament WHERE tournament_id = p_tournament_id FOR UPDATE;
+
+  SELECT COUNT(*) INTO v_cnt FROM cricket_match WHERE tournament_id = p_tournament_id;
+  IF v_cnt > 0 THEN
+    RAISE_APPLICATION_ERROR(-20001, 'Fixtures already generated for this tournament');
+  END IF;
+
+  FOR r IN (SELECT team_id FROM tournament_team
+             WHERE tournament_id = p_tournament_id ORDER BY team_id) LOOP
+    t(n) := r.team_id;  n := n + 1;
+  END LOOP;
+  IF n < 2 THEN
+    RAISE_APPLICATION_ERROR(-20002, 'Register at least 2 teams first');
+  END IF;
+  IF MOD(n, 2) = 1 THEN t(n) := 0; n := n + 1; END IF;      -- 0 = bye
+
+  IF v_start + (n - 2) * v_gap > v_end THEN
+    RAISE_APPLICATION_ERROR(-20003, 'Tournament dates too short for all rounds');
+  END IF;
+
+  FOR rd IN 1 .. n - 1 LOOP
+    FOR i IN 0 .. n / 2 - 1 LOOP
+      a := t(i);  b := t(n - 1 - i);
+      IF a <> 0 AND b <> 0 THEN
+        INSERT INTO cricket_match (tournament_id, round_no, match_date, team1_id, team2_id)
+        VALUES (p_tournament_id, rd, v_start + (rd - 1) * v_gap, LEAST(a, b), GREATEST(a, b));
+      END IF;
+    END LOOP;
+    v_last := t(n - 1);                         -- rotate all teams except t(0)
+    FOR k IN REVERSE 2 .. n - 1 LOOP t(k) := t(k - 1); END LOOP;
+    t(1) := v_last;
+  END LOOP;
+  -- caller COMMITs; any error leaves no half-made fixture list
+END generate_fixtures;
+/
+
+-- ---------- PROCEDURE 2: set the winner from the batting cards ----------
+CREATE OR REPLACE PROCEDURE complete_match (p_match_id IN NUMBER) AS
+  v_status cricket_match.status%TYPE;
+  v_t1 NUMBER; v_t2 NUMBER; v_r1 NUMBER; v_r2 NUMBER; v_winner NUMBER;
+BEGIN
+  SELECT status, team1_id, team2_id INTO v_status, v_t1, v_t2
+    FROM cricket_match WHERE match_id = p_match_id FOR UPDATE;
+  IF v_status = 'COMPLETED' THEN
+    RAISE_APPLICATION_ERROR(-20030, 'Result already recorded');
+  END IF;
+  SELECT MAX(CASE WHEN team_id = v_t1 THEN total_runs END),
+         MAX(CASE WHEN team_id = v_t2 THEN total_runs END)
+    INTO v_r1, v_r2 FROM v_team_score WHERE match_id = p_match_id;
+  IF v_r1 IS NULL OR v_r2 IS NULL THEN
+    RAISE_APPLICATION_ERROR(-20031, 'Both teams need batting cards first');
+  END IF;
+  v_winner := CASE WHEN v_r1 > v_r2 THEN v_t1 WHEN v_r2 > v_r1 THEN v_t2 END;  -- NULL = tie
+  UPDATE cricket_match SET status = 'COMPLETED', winner_id = v_winner
+   WHERE match_id = p_match_id;
+END complete_match;
+/
+
+-- ---------- TRIGGERS: a card's player must belong to one of the two teams ----------
+CREATE OR REPLACE TRIGGER trg_batting_team_check
+BEFORE INSERT OR UPDATE OF match_id, player_id ON batting
+FOR EACH ROW
+DECLARE v_ok NUMBER;
+BEGIN
+  SELECT COUNT(*) INTO v_ok
+    FROM cricket_match m JOIN player p ON p.player_id = :NEW.player_id
+   WHERE m.match_id = :NEW.match_id AND p.team_id IN (m.team1_id, m.team2_id);
+  IF v_ok = 0 THEN
+    RAISE_APPLICATION_ERROR(-20010, 'Batter does not belong to either team of this match');
+  END IF;
+END;
+/
+
+CREATE OR REPLACE TRIGGER trg_bowling_team_check
+BEFORE INSERT OR UPDATE OF match_id, player_id ON bowling
+FOR EACH ROW
+DECLARE v_ok NUMBER;
+BEGIN
+  SELECT COUNT(*) INTO v_ok
+    FROM cricket_match m JOIN player p ON p.player_id = :NEW.player_id
+   WHERE m.match_id = :NEW.match_id AND p.team_id IN (m.team1_id, m.team2_id);
+  IF v_ok = 0 THEN
+    RAISE_APPLICATION_ERROR(-20011, 'Bowler does not belong to either team of this match');
+  END IF;
+END;
+/
