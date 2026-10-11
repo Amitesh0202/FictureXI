@@ -2,7 +2,7 @@
 
 Tournament match-up and scorecard system. Given the teams registered in a tournament, the database generates the full round-robin fixture list; it also stores batting/bowling scorecards, squads and reports.
 
-**Team:** [name - ID], [name - ID], [name - ID]
+**Team:** group 3
 
 ## Tech stack
 Browser web app (HTML/CSS/JS) - Node.js + Express REST API - Oracle Database 19c+ (node-oracledb).
@@ -31,7 +31,7 @@ Application-layer (backend / frontend) tasks will be assigned later.
 | Member | Contribution |
 |---|---|
 | Member 1 [Amitesh - 2024A3PS0413H] | Requirements, EER diagram, relational mapping, normalization, design document |
-| Member 2 [Arvind - ID] | Schema DDL, constraints and indexes (`01_schema.sql`) |
-| Member 3 [Harshil - ID] | Views, GENERATE_FIXTURES and COMPLETE_MATCH (`02_views_procs_triggers.sql`) |
-| Member 4 [Tanuj - ID] | Triggers (`02_views_procs_triggers.sql`), integrity demo and constraint testing (`04_integrity_demo.sql`) |
-| Member 5 [Eshwar - ID] | Sample-data generator and seed (`05_seed.sql`), report queries Q1-Q5 (`03_queries.sql`), README |
+| Member 2 [Arvind - 2024A3PS0398H] | Schema DDL, constraints and indexes (`01_schema.sql`) |
+| Member 3 [Harshil - 2024A3PS0364H] | Views, GENERATE_FIXTURES and COMPLETE_MATCH (`02_views_procs_triggers.sql`) |
+| Member 4 [Tanuj - 2024A3PS0451H] | Triggers (`02_views_procs_triggers.sql`), integrity demo and constraint testing (`04_integrity_demo.sql`) |
+| Member 5 [Eshwar - 2024A3PS0439H] | Sample-data generator and seed (`05_seed.sql`), report queries Q1-Q5 (`03_queries.sql`), README |
