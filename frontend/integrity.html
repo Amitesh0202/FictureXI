@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FixtureXI - Integrity Lab</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+  <div id="msg"></div>
+  <section>
+    <h2>Integrity Lab</h2>
+    <p>Each test tries something invalid. The <b>database</b> (not the app) must refuse it.
+       Nothing is ever saved - every test is rolled back.</p>
+    <div id="tests"></div>
+  </section>
+</main>
+<script src="common.js"></script>
+<script src="integrity.js"></script>
+</body>
+</html>
