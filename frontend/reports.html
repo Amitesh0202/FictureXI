@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FixtureXI - Reports</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+  <div id="msg"></div>
+  <section>
+    <h2>Reports</h2>
+    Tournament <select id="tSelect" onchange="loadReports()"></select>
+  </section>
+  <section><h3>Points table <small>(Q1)</small></h3><div id="standings"></div></section>
+  <section><h3>Top 10 run scorers <small>(Q2)</small></h3><div id="runs"></div></section>
+  <section><h3>Wicket leaders - above the average <small>(Q3)</small></h3><div id="wickets"></div></section>
+  <section><h3>Three highest team totals <small>(Q4)</small></h3><div id="totals"></div></section>
+  <section><h3>Ever-present batters <small>(Q5)</small></h3><div id="ever"></div></section>
+</main>
+<script src="common.js"></script>
+<script src="reports.js"></script>
+</body>
+</html>
