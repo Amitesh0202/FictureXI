@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FixtureXI - Tournaments</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+  <div id="msg"></div>
+
+  <section>
+    <h2>Tournaments</h2>
+    <div id="tournamentList"></div>
+  </section>
+
+  <section>
+    <h3>Create a tournament</h3>
+    <div class="row">
+      <input id="tName" placeholder="Name">
+      Start <input id="tStart" type="date">
+      End <input id="tEnd" type="date">
+      Days between rounds <input id="tGap" type="number" min="1" value="1" style="width:60px">
+      <button onclick="createTournament()">Create</button>
+    </div>
+  </section>
+
+  <section>
+    <h3>Register teams and generate fixtures</h3>
+    <div class="row">
+      Tournament <select id="tSelect" onchange="loadTournament()"></select>
+      Team <select id="teamSelect"></select>
+      <button onclick="registerTeam()">Register team</button>
+      <button onclick="generateFixtures()">Generate fixtures</button>
+    </div>
+    <p><b>Registered teams:</b> <span id="registered"></span></p>
+    <div id="fixtures"></div>
+  </section>
+</main>
+<script src="common.js"></script>
+<script src="tournaments.js"></script>
+</body>
+</html>
