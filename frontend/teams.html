@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FixtureXI - Teams, Players, Venues</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+  <div id="msg"></div>
+
+  <section>
+    <h2>Teams</h2>
+    <div class="row">
+      <input id="teamName" placeholder="Team name">
+      <input id="teamCode" placeholder="Code" maxlength="4" style="width:70px">
+      <button onclick="addTeam()">Add team</button>
+    </div>
+    <div id="teams"></div>
+  </section>
+
+  <section>
+    <h2>Players</h2>
+    <div class="row">
+      Team <select id="filterTeam" onchange="loadPlayers()"></select>
+      Search <input id="search" placeholder="name" oninput="loadPlayers()">
+    </div>
+    <div class="row">
+      <input id="pName" placeholder="Full name">
+      <select id="pRole">
+        <option>BATTER</option><option>BOWLER</option><option>ALLROUNDER</option><option>KEEPER</option>
+      </select>
+      <select id="pTeam"></select>
+      <button onclick="addPlayer()">Add player</button>
+    </div>
+    <div id="players"></div>
+    <p id="profile"></p>
+  </section>
+
+  <section>
+    <h2>Venues</h2>
+    <div class="row">
+      <input id="vName" placeholder="Venue name">
+      <input id="vCity" placeholder="City">
+      <input id="vCountry" placeholder="Country">
+      <input id="vCap" type="number" min="1" placeholder="Capacity (optional)">
+      <button onclick="addVenue()">Add venue</button>
+    </div>
+    <div id="venues"></div>
+  </section>
+</main>
+<script src="common.js"></script>
+<script src="teams.js"></script>
+</body>
+</html>
